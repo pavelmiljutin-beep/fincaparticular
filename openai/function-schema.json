@@ -1,0 +1,22 @@
+{
+  "type": "function",
+  "function": {
+    "name": "get_city_insight",
+    "description": "Fetch condensed, area-level living-suitability data for ONE location (a Spanish city/town/district or coordinate, plus served neighbours) from Parcelabot's parcel-level report database. Returns scored Markdown as INPUT DATA to reason over, never a ready-made verdict. English only; call twice to compare two places.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "type": "string",
+          "description": "A place name in English, or coordinates as \"lat,lng\". One location per call."
+        },
+        "pricing": {
+          "type": "string",
+          "enum": ["low", "average", "high"],
+          "description": "Optional price tier to match like-for-like."
+        }
+      },
+      "required": ["location"]
+    }
+  }
+}

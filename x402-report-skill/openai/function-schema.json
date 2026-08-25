@@ -1,0 +1,38 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "check_report_coverage",
+      "description": "FREE. Return honest nearby point-of-interest counts and the list of report chapters available for a coordinate, so you can decide whether ordering a paid Parcelabot report is worthwhile. No payment is made. If coverage_level is 'none' or 'sparse', the local data is thin — confirm with the user before ordering. Always call this before order_full_report.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number", "description": "Latitude in decimal degrees (-90..90)." },
+          "lng": { "type": "number", "description": "Longitude in decimal degrees (-180..180)." },
+          "radius_km": { "type": "number", "description": "Optional search radius in km (0..50). Defaults to the server setting." }
+        },
+        "required": ["lat", "lng"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "order_full_report",
+      "description": "PAID via the x402 protocol (USDT on TON). Order a full parcel-level Parcelabot due-diligence report for a coordinate, pay for it autonomously, wait for rendering, and return the report as Markdown. Requires a funded TON wallet configured in the handler. Call check_report_coverage first and confirm with the user when coverage is thin. One report per call.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number", "description": "Latitude in decimal degrees (-90..90)." },
+          "lng": { "type": "number", "description": "Longitude in decimal degrees (-180..180)." },
+          "language": {
+            "type": "string",
+            "enum": ["en", "es", "ru", "fr", "uk", "de", "ar"],
+            "description": "Report language (default en)."
+          }
+        },
+        "required": ["lat", "lng"]
+      }
+    }
+  }
+]

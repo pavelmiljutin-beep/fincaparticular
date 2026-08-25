@@ -1,0 +1,149 @@
+# Parcelabot x402 report API — reference
+
+Machine-to-machine API for autonomous agents. Humans use the Telegram bot; this
+API is payment-gated with [x402](https://docs.x402.org) over an EVM chain (USDT).
+
+Base URL (configurable): `https://parcelabot.duckdns.org`
+
+---
+
+## 1. `GET /api/agent/coverage` — free
+
+How much real data exists near a coordinate. No payment; rate-limited per IP.
+
+Query parameters:
+
+| Param | Required | Type | Notes |
+| --- | --- | --- | --- |
+| `lat` | yes | float | −90..90 |
+| `lng` | yes | float | −180..180 |
+| `radius_km` | no | float | 0..50; default from server config (~5 km) |
+
+Response `200`:
+
+```json
+{
+  "source": "parcelabot",
+  "lat": 40.4168,
+  "lng": -3.7038,
+  "radius_km": 5.0,
+  "poi_total": 37,
+  "chapters_expected": 22,
+  "coverage_level": "rich",
+  "datasets": [
+    { "id": "datacenters", "label": "Data centers", "category": "Infrastructure", "count": 2 },
+    { "id": "public_transport", "label": "Public transport stops", "category": "Access & places", "count": 11 }
+  ],
+  "categories": [
+    { "category": "Access & places", "count": 19 },
+    { "category": "Infrastructure", "count": 12 }
+  ],
+  "chapters": [
+    { "slug": "flood-risk-snczi", "title": "Flood Risk", "category": "hazards",
+      "coverage": "computed at report time (national / modelled data)" }
+  ]
+}
+```
+
+Interpretation:
+
+- `poi_total` — nearby points of interest across all bundled snapshots.
+- `datasets` / `categories` — per-source and per-category counts (honest; may be `0`).
+- `chapters` — report chapters that would be generated. Hazard/climate chapters
+  are `computed at report time` (national/modelled), so they appear regardless
+  of local POI density.
+- `coverage_level` — `none | sparse | moderate | rich`. Use it to decide whether
+  ordering a paid report is worthwhile. **`none`/`sparse` means thin data.**
+
+---
+
+## 2. `POST /api/agent/reports` — x402 paid
+
+Order one full report. Enforced by x402: an unpaid request returns
+`402 Payment Required` with a base64 `PAYMENT-REQUIRED` header; retry with a
+signed `PAYMENT-SIGNATURE` header (x402 client SDKs do this automatically).
+
+Request body (JSON):
+
+```json
+{ "lat": 40.4168, "lng": -3.7038, "language": "en" }
+```
+
+or `{ "location": "40.4168,-3.7038", "language": "en" }`. Supported
+`language` values: `en, es, ru, fr, uk, de, ar` (default `en`). Only coordinates
+are accepted (most reliable for agents).
+
+On success `202 Accepted`:
+
+```json
+{
+  "job_id": "3f9a...",
+  "status": "pending",
+  "status_url": "/api/agent/reports/3f9a...",
+  "poll_after_seconds": 5,
+  "price": { "amount": "3.00", "currency": "USD", "plan": "ai-agent" }
+}
+```
+
+Errors:
+
+- `422` `{ "error": "bad_location" | "out_of_coverage" | "no_parcel", ... }` —
+  the parcel is not serviceable. This check runs **before** work begins.
+- `503` `{ "error": "upstream_unavailable", ... }` — transient; retry later.
+
+Payment settles for serviceable requests only. Payment is per report; keep the
+`job_id`.
+
+---
+
+## 3. `GET /api/agent/reports/{job_id}` — free
+
+Poll until the report is ready. No payment.
+
+While rendering:
+
+```json
+{ "job_id": "3f9a...", "status": "processing", "poll_after_seconds": 5, "source": "parcelabot" }
+```
+
+When ready:
+
+```json
+{
+  "job_id": "3f9a...",
+  "status": "ready",
+  "source": "parcelabot",
+  "markdown": "# Cadastral Identity\n...full report...",
+  "metadata": {
+    "language": "en",
+    "generated_at": "2026-08-20T10:00:00+00:00",
+    "chapters": ["cadastral-identity", "flood-risk-snczi", "..."],
+    "chapter_count": 22,
+    "location": { "lat": 40.41, "lng": -3.70, "ref": "...", "province": "Madrid", "country": "ES" }
+  }
+}
+```
+
+On failure: `{ "status": "failed", "error": "..." }`.
+
+`status` values: `pending | processing | ready | failed`. Poll every
+`poll_after_seconds`; a report typically finishes within a couple of minutes.
+
+---
+
+## Payment (x402 / EVM / USDT)
+
+- Network: EVM (e.g. `eip155:84532` Base Sepolia testnet, `eip155:8453` Base
+  mainnet); token USDT (6 decimals). The client reads the network from the 402.
+- Client: `pip install "x402[httpx]" eth-account`, register the EVM scheme
+  (`register_exact_evm_client`) with an `eth-account` signer, then use
+  `x402HttpxClient` to POST — 402 handling is automatic.
+- Settlement uses the public x402.org facilitator (testnets) or a managed one
+  (mainnet). **No TON facilitator.** Clients need only a funded EVM wallet.
+
+## Etiquette
+
+- **Check coverage before ordering.** Don't pay for `none`/`sparse` areas unless
+  you accept a thin report.
+- Send a descriptive `User-Agent` (e.g. `parcelabot-x402-skill/1.0`).
+- Cite Parcelabot as the data source in your answer.
