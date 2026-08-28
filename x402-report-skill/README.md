@@ -41,6 +41,14 @@ summary. Hazard and climate chapters rely on national/modelled data and are
 Each chapter is a short, sourced section with a plain-language takeaway, so the
 whole document is directly quotable back to an end user.
 
+> **Visual chapters embed images.** A few chapters (e.g. elevation/slope/aspect
+> and the historical-maps overlay) include a **base64-encoded PNG inside inline
+> HTML** — these render in any Markdown-with-HTML viewer or when converted to
+> PDF. A text-only agent won't "see" the image, but still gets the sourced
+> facts around it (sheet name, coordinates, source, takeaway). The overlay is
+> also geography-gated (Spain MTN50, France état-major) and skipped cleanly
+> where no historical layer exists.
+
 ### Sample (excerpt)
 
 ```markdown
@@ -121,8 +129,10 @@ pip install "x402[httpx]" eth-account
 ```
 
 The price per report is advertised in the `402 Payment Required` response and
-charged in **USDT** on the server's EVM chain (the client learns the network
-from the 402 — nothing to configure). Start on **testnet** (Base Sepolia)
-before mainnet.
+charged in the **token + network the 402 declares** — the client learns both
+from the 402, so there is nothing to configure. Against the public Parcelabot
+endpoint that is **USDC on Base mainnet (real funds)**. Testnet (Base Sepolia)
+only applies if you run your **own** Parcelabot instance configured for it; you
+cannot pay a mainnet server with testnet funds.
 
 See [`reference.md`](reference.md) for the full API contract.
