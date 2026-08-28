@@ -19,7 +19,7 @@
     "type": "function",
     "function": {
       "name": "order_full_report",
-      "description": "PAID via the x402 protocol (USDT on TON). Order a full parcel-level Parcelabot due-diligence report for a coordinate, pay for it autonomously, wait for rendering, and return the report as Markdown. Requires a funded TON wallet configured in the handler. Call check_report_coverage first and confirm with the user when coverage is thin. One report per call.",
+      "description": "PAID via the x402 protocol (USDC on an EVM chain, e.g. Base). Order a full parcel-level Parcelabot due-diligence report for a coordinate, pay for it autonomously, wait for rendering, and return the report as Markdown. Requires a funded EVM wallet configured in the handler. Call check_report_coverage first and confirm with the user when coverage is thin. One report per call.",
       "parameters": {
         "type": "object",
         "properties": {

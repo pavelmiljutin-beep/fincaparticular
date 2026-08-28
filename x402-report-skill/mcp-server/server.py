@@ -5,7 +5,8 @@ Exposes two tools for AI agents:
 * ``check_report_coverage(lat, lng, radius_km?)`` — FREE. How many real POIs +
   which report chapters exist near a coordinate, so the agent decides whether to
   order.
-* ``order_full_report(lat, lng, language?)`` — PAID via x402 (TON/USDT). Orders
+* ``order_full_report(lat, lng, language?)`` — PAID via x402 (USDC on an EVM
+  chain). Orders
   a full parcel-level report, waits for it, and returns the Markdown.
 
 Run:
@@ -76,9 +77,9 @@ async def order_full_report(
 ) -> str:
     """Order + pay for a full parcel-level report at a coordinate (PAID via x402).
 
-    Pays in USDT on TON, waits for the report, and returns its Markdown. Call
-    ``check_report_coverage`` first. Supported languages: en, es, ru, fr, uk,
-    de, ar. Raises on unserviceable locations or wallet/payment errors.
+    Pays in USDC on an EVM chain, waits for the report, and returns its Markdown.
+    Call ``check_report_coverage`` first. Supported languages: en, es, ru, fr,
+    uk, de, ar. Raises on unserviceable locations or wallet/payment errors.
     """
     from x402.http.clients import x402HttpxClient
 

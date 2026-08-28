@@ -126,7 +126,7 @@ async def _run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Order a Parcelabot report via x402 (TON/USDT)."
+        description="Order a Parcelabot report via x402 (USDC/EVM)."
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(

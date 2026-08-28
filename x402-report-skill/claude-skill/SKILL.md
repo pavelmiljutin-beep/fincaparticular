@@ -18,6 +18,24 @@ PVGIS solar, coastal sea-level rise, infrastructure and POI datasets, and more).
 This skill lets you **order a full report for a coordinate and pay for it with
 x402** (HTTP 402, USDT on an EVM chain), receiving the finished report as Markdown.
 
+## What a report contains
+
+One order returns a single Markdown document of **~20 parcel-level chapters**,
+each sourced and with a plain-language takeaway:
+
+- **Hazards & risk** — flood (SNCZI), seismic, radon (CSN), wildfire (EFFIS),
+  mold, lightning.
+- **Climate & environment** — climate normals, wind rose, solar-PV, air
+  quality (EEA), pollen, light pollution, coastal sea-level rise.
+- **Land & position** — cadastral identity, elevation/slope/aspect,
+  historical-maps overlay.
+- **Access & community** — critical-infra proximity, public transport,
+  tourism/culture, neighborhood sentiment (real nearby reviews).
+
+Coverage is fullest in **Spain** (incl. foral provinces); **Andorra, France,
+Netherlands** get a growing subset, with Spain-only chapters skipped cleanly —
+`check_report_coverage` shows the exact list for a coordinate.
+
 ## When to use
 
 - The user wants an in-depth report on a **specific property/parcel** (by

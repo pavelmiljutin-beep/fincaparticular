@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Order a full Parcelabot report as an AI agent, paying with x402 (TON/USDT).
+"""Order a full Parcelabot report as an AI agent, paying with x402 (USDC/EVM).
 
 Flow:
   1. (optional) GET  /api/agent/coverage        — free; how much data is nearby.
@@ -123,7 +123,7 @@ async def _run(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Order a Parcelabot report via x402 (TON/USDT)."
+        description="Order a Parcelabot report via x402 (USDC/EVM)."
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
