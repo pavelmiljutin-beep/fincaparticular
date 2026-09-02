@@ -8,21 +8,27 @@ from __future__ import annotations
 def build_payload(inp: dict) -> dict:
     """Map Actor input to the partner endpoint request body.
 
-    Raises ``ValueError`` when no usable location was provided.
+    Raises ``ValueError`` when no usable location/reference was provided.
     """
     payload: dict = {"language": (inp.get("language") or "en")}
 
+    ref = inp.get("ref")
     location = inp.get("location")
     lat = inp.get("lat")
     lng = inp.get("lng")
-    if isinstance(location, str) and location.strip():
+    if isinstance(ref, str) and ref.strip():
+        payload["ref"] = ref.strip()
+        if inp.get("country"):
+            payload["country"] = str(inp["country"]).strip().upper()
+    elif isinstance(location, str) and location.strip():
         payload["location"] = location.strip()
     elif lat not in (None, "") and lng not in (None, ""):
         payload["lat"] = lat
         payload["lng"] = lng
     else:
         raise ValueError(
-            "Provide 'location' as 'lat,lng', or both 'lat' and 'lng'."
+            "Provide 'ref' (cadastral reference), 'location' as 'lat,lng', "
+            "or both 'lat' and 'lng'."
         )
 
     if inp.get("persist") is not None:

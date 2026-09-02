@@ -28,6 +28,19 @@ def test_build_payload_persist_flag():
     assert payload["persist"] is True
 
 
+def test_build_payload_ref():
+    payload = build_payload({"ref": " 8034006VP3183C0001IH ", "country": "es"})
+    assert payload["ref"] == "8034006VP3183C0001IH"
+    assert payload["country"] == "ES"
+
+
+def test_build_payload_ref_takes_priority_over_coords():
+    payload = build_payload({"ref": "8034006VP3183C0001IH", "lat": "40", "lng": "-3"})
+    assert payload["ref"] == "8034006VP3183C0001IH"
+    assert "lat" not in payload
+
+
+
 def test_build_payload_missing_location_raises():
     with pytest.raises(ValueError):
         build_payload({"language": "en"})

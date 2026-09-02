@@ -29,6 +29,8 @@ Parcelabot server authenticates the Actor with a shared API key.
 | --- | --- | --- |
 | `location` | string | `"lat,lng"`, e.g. `40.4168,-3.7038`. Simplest option. |
 | `lat`, `lng` | string | Decimal degrees, as an alternative to `location`. |
+| `ref` | string | Exact cadastral reference — Spain (20-char RC), France (14-char IDU) or Netherlands (kadastrale aanduiding). Takes priority over coordinates. |
+| `country` | enum | Optional `ES` / `FR` / `NL` to disambiguate an ambiguous `ref`. |
 | `language` | enum | `en` (default), `es`, `fr`, `de`, `uk`, `ru`, `ar`. |
 | `persist` | boolean | Ask the server to also store the report (default `false`). |
 | `baseUrl` | string | Override the Parcelabot host (default is the public one). |
@@ -68,6 +70,11 @@ One dataset item per run:
 | `ref`, `country`, `province`, `municipality`, `lat`, `lng` | Parcel identity. |
 | `chapterCount`, `chapters` | Chapter summary. |
 | `priceAmount`, `priceCurrency`, `pricePlan` | Informational price (Apify does the billing). |
+
+If the coordinate is **not on a parcel** or **outside coverage**, the run
+finishes successfully with a single `{ "status": "no_data", "error", "message",
+"requested" }` item instead of failing — aim at a building rooftop and retry.
+
 
 ## Monetization
 

@@ -7,9 +7,25 @@
         "location": {
             "title": "Location (lat,lng)",
             "type": "string",
-            "description": "A single 'lat,lng' string, e.g. '40.4168,-3.7038'. Simplest option.",
+            "description": "A single 'lat,lng' string aimed at a building or plot, e.g. '41.4036,2.1744'. In Google Maps, right-click the centre of a building's rooftop and copy the coordinates — a plaza, road, park or water has no cadastral parcel and returns no report.",
             "editor": "textfield",
-            "prefill": "40.4168,-3.7038",
+            "prefill": "41.4036,2.1744",
+            "nullable": true
+        },
+        "ref": {
+            "title": "Cadastral reference",
+            "type": "string",
+            "description": "Alternative to a location: an exact cadastral reference. Spain (20-char RC, e.g. 8034006VP3183C0001IH), France (14-char IDU, e.g. 56005000AM0333) or Netherlands (kadastrale aanduiding, e.g. ASD40-C-7285). Takes priority over lat/lng and location.",
+            "editor": "textfield",
+            "nullable": true
+        },
+        "country": {
+            "title": "Cadastre country (for ref)",
+            "type": "string",
+            "description": "Optional. Force which cadastre to use for an ambiguous 'ref'.",
+            "editor": "select",
+            "enum": ["ES", "FR", "NL"],
+            "enumTitles": ["Spain", "France", "Netherlands"],
             "nullable": true
         },
         "lat": {

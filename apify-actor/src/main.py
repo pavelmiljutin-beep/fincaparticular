@@ -74,10 +74,34 @@ async def main() -> None:
 
         if resp.status_code != 200:
             detail = ""
+            code = ""
             try:
-                detail = resp.json().get("message") or resp.text
+                body = resp.json()
+                detail = body.get("message") or resp.text
+                code = body.get("error") or ""
             except Exception:
                 detail = resp.text
+
+            # 422 = a valid "nothing to report here" answer (the point is not
+            # on a parcel, or outside coverage). Finish cleanly with an
+            # informative record rather than failing the whole run.
+            if resp.status_code == 422:
+                Actor.log.info("No report for this location: %s", detail)
+                await Actor.push_data(
+                    {
+                        "status": "no_data",
+                        "error": code or "no_parcel",
+                        "message": detail,
+                        "requested": {
+                            "ref": payload.get("ref"),
+                            "location": payload.get("location"),
+                            "lat": payload.get("lat"),
+                            "lng": payload.get("lng"),
+                        },
+                    }
+                )
+                return
+
             await Actor.fail(
                 status_message=(
                     f"Parcelabot returned HTTP {resp.status_code}: {detail}"
