@@ -2,7 +2,8 @@
 
 An AI-agent skill for **ordering a full, parcel-level Parcelabot property report
 and paying for it autonomously with the [x402](https://docs.x402.org) payment
-protocol** (HTTP 402, **USDT on an EVM chain**). The agent receives the finished
+protocol** (HTTP 402, **a USD stablecoin — USDC by default — on an EVM chain**).
+The agent receives the finished
 report as **Markdown**.
 
 This is the paid, machine-to-machine counterpart to the free

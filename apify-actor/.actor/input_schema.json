@@ -1,0 +1,62 @@
+{
+    "title": "Parcelabot Property Report input",
+    "description": "Provide a location to build a full property due-diligence report for. Use lat + lng, or a single 'lat,lng' location string.",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "location": {
+            "title": "Location (lat,lng)",
+            "type": "string",
+            "description": "A single 'lat,lng' string, e.g. '40.4168,-3.7038'. Simplest option.",
+            "editor": "textfield",
+            "prefill": "40.4168,-3.7038",
+            "nullable": true
+        },
+        "lat": {
+            "title": "Latitude",
+            "type": "string",
+            "description": "Decimal latitude (WGS-84), e.g. '40.4168'. Use together with 'lng' as an alternative to 'location'.",
+            "editor": "textfield",
+            "nullable": true
+        },
+        "lng": {
+            "title": "Longitude",
+            "type": "string",
+            "description": "Decimal longitude (WGS-84), e.g. '-3.7038'. Use together with 'lat'.",
+            "editor": "textfield",
+            "nullable": true
+        },
+        "language": {
+            "title": "Report language",
+            "type": "string",
+            "description": "Language of the generated report.",
+            "editor": "select",
+            "default": "en",
+            "enum": ["en", "es", "fr", "de", "uk", "ru", "ar"],
+            "enumTitles": ["English", "Español", "Français", "Deutsch", "Українська", "Русский", "العربية"]
+        },
+        "persist": {
+            "title": "Store a copy on the Parcelabot server",
+            "type": "boolean",
+            "description": "Ask the Parcelabot server to also persist the report for audit. Off by default — Apify already retains the result.",
+            "editor": "checkbox",
+            "default": false
+        },
+        "baseUrl": {
+            "title": "Parcelabot base URL",
+            "type": "string",
+            "description": "Override the Parcelabot host. Leave empty to use the default.",
+            "editor": "textfield",
+            "default": "https://parcelabot.duckdns.org",
+            "nullable": true
+        },
+        "apiKey": {
+            "title": "Parcelabot API key",
+            "type": "string",
+            "description": "Partner API key. Prefer setting the PARCELABOT_API_KEY environment variable (secret) on the Actor instead of passing it here.",
+            "editor": "textfield",
+            "isSecret": true,
+            "nullable": true
+        }
+    }
+}

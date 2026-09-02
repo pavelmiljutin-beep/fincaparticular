@@ -1,6 +1,6 @@
 # OpenAI / ChatGPT tools — Parcelabot x402 report
 
-Two function tools for agents that can pay with x402 (USDT on an EVM chain):
+Two function tools for agents that can pay with x402 (a USD stablecoin, USDC by default, on an EVM chain):
 
 - `check_report_coverage(lat, lng, radius_km?)` — **free**; decide before paying.
 - `order_full_report(lat, lng, language?)` — **paid**; returns the Markdown report.

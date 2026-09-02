@@ -1,0 +1,22 @@
+{
+    "actorSpecification": 1,
+    "views": {
+        "overview": {
+            "title": "Reports",
+            "transformation": {
+                "fields": ["ref", "country", "language", "chapterCount", "priceAmount", "priceCurrency"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "ref": { "label": "Cadastral ref" },
+                    "country": { "label": "Country" },
+                    "language": { "label": "Language" },
+                    "chapterCount": { "label": "Chapters" },
+                    "priceAmount": { "label": "Price" },
+                    "priceCurrency": { "label": "Currency" }
+                }
+            }
+        }
+    }
+}

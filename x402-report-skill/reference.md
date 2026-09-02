@@ -1,7 +1,8 @@
 # Parcelabot x402 report API — reference
 
 Machine-to-machine API for autonomous agents. Humans use the Telegram bot; this
-API is payment-gated with [x402](https://docs.x402.org) over an EVM chain (USDT).
+API is payment-gated with [x402](https://docs.x402.org) over an EVM chain (a USD
+stablecoin, USDC by default).
 
 Base URL (configurable): `https://parcelabot.duckdns.org`
 
@@ -131,10 +132,12 @@ On failure: `{ "status": "failed", "error": "..." }`.
 
 ---
 
-## Payment (x402 / EVM / USDT)
+## Payment (x402 / EVM / USDC by default)
 
 - Network: EVM (e.g. `eip155:84532` Base Sepolia testnet, `eip155:8453` Base
-  mainnet); token USDT (6 decimals). The client reads the network from the 402.
+  mainnet); token is the chain's default stablecoin — USDC by default (6
+  decimals) — or whatever token the server advertises. The client reads the
+  network and asset from the 402.
 - Client: `pip install "x402[httpx]" eth-account`, register the EVM scheme
   (`register_exact_evm_client`) with an `eth-account` signer, then use
   `x402HttpxClient` to POST — 402 handling is automatic.

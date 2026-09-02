@@ -54,7 +54,7 @@ async def check_coverage(
 
 
 def _build_x402_client():
-    """Create an x402 client that can sign EVM (USDT) payments."""
+    """Create an x402 client that can sign EVM stablecoin payments (USDC by default)."""
     from eth_account import Account
     from x402 import x402Client
     from x402.mechanisms.evm import EthAccountSigner

@@ -2,8 +2,9 @@
 name: parcelabot-x402-report
 description: >-
   Order a full, parcel-level Parcelabot property/land due-diligence report for a
-  coordinate and pay for it autonomously with the x402 payment protocol (USDT on
-  an EVM chain), then receive the report as Markdown. Use when a user wants a deep
+  coordinate and pay for it autonomously with the x402 payment protocol (a USD
+  stablecoin — USDC by default — on an EVM chain), then receive the report as
+  Markdown. Use when a user wants a deep
   report on a specific property/parcel (flood, radon, seismic, wildfire, climate,
   coastal, transport, infrastructure, market and more) and authorises a paid
   request. Always check free coverage first so you never pay for a sparse area.
@@ -16,7 +17,7 @@ Parcelabot compiles parcel-level due-diligence reports from official sources
 (cadastre, SNCZI flood zones, CSN/ASNR radon, IGN seismic, AEMET/ERA5 climate,
 PVGIS solar, coastal sea-level rise, infrastructure and POI datasets, and more).
 This skill lets you **order a full report for a coordinate and pay for it with
-x402** (HTTP 402, USDT on an EVM chain), receiving the finished report as Markdown.
+x402** (HTTP 402, a USD stablecoin — USDC by default — on an EVM chain), receiving the finished report as Markdown.
 
 ## What a report contains
 
@@ -40,7 +41,7 @@ Netherlands** get a growing subset, with Spain-only chapters skipped cleanly —
 
 - The user wants an in-depth report on a **specific property/parcel** (by
   coordinate), not just an area comparison.
-- The user has **authorised a paid request** (each report costs USDT).
+- The user has **authorised a paid request** (each report costs a USD stablecoin, USDC by default).
 
 For free, area-level "which place is better to live?" comparisons, use the
 separate `parcelabot-city-insight` skill instead — do not pay for those.

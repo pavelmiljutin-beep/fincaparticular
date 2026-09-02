@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+*.pyc
+storage
+.idea
+.vscode
+apify_storage
+crawlee_storage

@@ -45,7 +45,7 @@ to a custom domain.
 | Rail | Skill | Audience | Payment | Output |
 | --- | --- | --- | --- | --- |
 | Free, area-level | this folder (`city-insight`) | any assistant | none | condensed scored Markdown |
-| Paid, parcel-level | [`x402-report-skill/`](x402-report-skill/) | autonomous agents | **x402 (TON/USDT)** | full report as Markdown |
+| Paid, parcel-level | [`x402-report-skill/`](x402-report-skill/) | autonomous agents | **x402 (USDC by default)** | full report as Markdown |
 
 Humans use the Telegram bot. Autonomous **AI agents** that want a full,
 parcel-level report order and pay for it with the
