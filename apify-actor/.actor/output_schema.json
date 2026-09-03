@@ -1,0 +1,27 @@
+{
+    "$schema": "https://apify-projects.github.io/actor-json-schemas/output.json?v=0.3",
+    "actorOutputSchemaVersion": 1,
+    "title": "Parcelabot Property Report output",
+    "description": "One structured report, preview, or no-data result in the default dataset, with optional Markdown and map files in the default key-value store.",
+    "type": "object",
+    "properties": {
+        "report": {
+            "type": "string",
+            "title": "Structured report",
+            "description": "The normalized report, coverage preview, quota outcome, or no-data result. Read status first, then summary and chapters for ready reports.",
+            "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+        },
+        "markdown": {
+            "type": "string",
+            "title": "Markdown report",
+            "description": "Human-readable report prose, available only when the input format is markdown or both.",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/REPORT.md"
+        },
+        "images": {
+            "type": "string",
+            "title": "Map images",
+            "description": "Optional map PNG files, available only when includeImages is true.",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/keys"
+        }
+    }
+}

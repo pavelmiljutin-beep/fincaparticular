@@ -137,7 +137,7 @@ def record_from_response(data: dict) -> dict:
 
 
 def quota_record(data: dict) -> dict:
-    """Flatten a fair-use rejection into a dataset record."""
+    """Flatten an upstream quota rejection into a dataset record."""
     quota = data.get("quota") or {}
     return {
         "status": "quota_exceeded",

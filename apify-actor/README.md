@@ -120,7 +120,15 @@ Map images are large base64 PNGs — a single one can outweigh the entire text
 report — so they are **off by default**. With `includeImages: true` they are
 written to the key-value store and referenced from the dataset record
 (`images[].keyValueStoreKey`) rather than inlined, keeping the record readable
-by a language model.
+by a language model. When Apify exposes the default store id, each descriptor
+also carries `keyValueStoreId` and an `apiUrl` of the form
+`https://api.apify.com/v2/key-value-stores/{storeId}/records/{key}`. Fetch that
+URL with an Apify token that can read the run storage, or open the key from the
+run's Key-value store tab in Console.
+
+Image-only chapters such as `old-maps-overlay` are omitted from default
+image-free report runs; request `includeImages: true` when those visual artifacts
+are part of the due diligence decision.
 
 Markdown output is likewise stored as `REPORT.md` and referenced by
 `markdownKeyValueStoreKey`.
@@ -155,7 +163,7 @@ One dataset item per run.
 | `chaptersFailed`, `chaptersSkipped` | Completeness. `retryable` marks transient failures. |
 | `cache` | `"miss"` (freshly generated) or `"hit"` (replayed); `cachedAt` gives the original timestamp. |
 | `markdownKeyValueStoreKey` | Present when Markdown was requested (`REPORT.md`). |
-| `images` | Present when `includeImages` — descriptors with `keyValueStoreKey`. |
+| `images` | Present when `includeImages` — descriptors with `keyValueStoreKey`, and usually `keyValueStoreId` + `apiUrl`. |
 | `priceAmount`, `priceCurrency`, `pricePlan` | Informational unit price. |
 
 **Dry run** (`status: "preview"`): `coverageLevel`, `poiTotal`, `chapterCount`,
@@ -188,23 +196,26 @@ Changing any option that changes the output produces a fresh report.
 
 ## Pricing
 
-**$10/month**, rented through Apify — not a per-run charge. Fair use is **100
-reports/month** and **20/day**.
+This Actor is intended for Apify's **pay-per-event** model, not rental pricing.
+Configure one primary event in the Apify Console:
 
-- Both windows are **rolling**, not calendar: the monthly allowance is the last
-  30 days, so there is no month-end reset to wait for.
-- **Dry runs are free** and never count against the cap.
-- **Cache hits are free** — re-reading a report you already ordered costs you
-  nothing and consumes no allowance.
-- The daily figure is a burst limiter, not a second budget; the monthly cap is
-  what actually binds.
+| Event | Launch price | Charged when | Not charged |
+| --- | --- | --- | --- |
+| `report-generated` | **$0.49 / report** | A full report is successfully returned (`status: "ready"`), including a cache hit. | Free `dryRun` coverage previews, `no_data`, quota responses, invalid input, and failed runs. |
 
-When the cap is reached the run still **succeeds**, pushing a
-`status: "quota_exceeded"` record with `quotaResetsAt` — so a scheduled agent
-can back off cleanly rather than fail.
+$0.49 is a deliberately low adoption price for a structured, multi-source
+parcel-screening report. It is easy to understand, avoids charging for a
+location that cannot produce a report, and leaves room to move toward
+$0.79–$0.99 after 100 paid reports and a measured cost/reliability review.
+Enable pass-through platform usage costs only if Apify Analytics shows them
+materially eroding the margin; the report event remains the only user-facing
+price signal.
 
-`priceAmount` in the output is the informational unit price of the underlying
-report, not what you are charged.
+The server's `priceAmount`, `priceCurrency`, and `pricePlan` fields remain
+informational metadata about Parcelabot's underlying service, not the Apify
+charge. The older `quota_exceeded` status is retained for backwards-compatible
+handling of any server-side quota policy; it is not part of this Actor's launch
+pricing.
 
 If you would rather pay per report in USDC, Parcelabot also exposes an
 [x402 rail](../x402-report-skill/) that takes crypto payment directly, with the

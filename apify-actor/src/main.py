@@ -2,8 +2,9 @@
 
 A thin forwarder: it takes a location, calls the Parcelabot partner report
 endpoint (``POST /api/partner/reports``) with a shared API key, and pushes
-the returned structured report to the Actor's default dataset. Apify bills
-the end user via a monthly rental; Parcelabot generates the report. No
+the returned structured report to the Actor's default dataset. Apify charges
+the ``report-generated`` event only after a full report is delivered.
+Parcelabot generates the report. No
 scraping, no browser — just a proxy.
 
 Two modes:
@@ -43,13 +44,19 @@ MAX_ATTEMPTS = 3
 RETRY_BACKOFF_SECONDS = 3.0
 
 
-def _subscriber_headers() -> dict:
-    """Identify the renting Apify account for fair-use accounting.
+def _kvs_record_ref(key: str) -> dict:
+    store_id = os.getenv("APIFY_DEFAULT_KEY_VALUE_STORE_ID")
+    out = {"keyValueStoreKey": key, "contentType": "image/png"}
+    if store_id:
+        out["keyValueStoreId"] = store_id
+        out["apiUrl"] = (
+            f"https://api.apify.com/v2/key-value-stores/{store_id}/records/{key}"
+        )
+    return out
 
-    The Actor is rented monthly rather than billed per run, so the
-    upstream needs to attribute usage to a subscriber to enforce its
-    published fair-use cap.
-    """
+
+def _subscriber_headers() -> dict:
+    """Identify the Apify user and run to the upstream service."""
     headers = {}
     user_id = os.getenv("APIFY_USER_ID")
     run_id = os.getenv("APIFY_ACTOR_RUN_ID")
@@ -81,7 +88,7 @@ async def _store_images(images: list) -> list:
                 "slug": image.get("slug"),
                 "kind": image.get("kind"),
                 "bytes": image.get("bytes"),
-                "keyValueStoreKey": key,
+                **_kvs_record_ref(key),
             }
         )
     return stored
@@ -196,10 +203,10 @@ async def main() -> None:
             except Exception:
                 detail = resp.text
 
-            # The fair-use cap is a known, temporary state of a healthy
-            # subscription, not a failure — say when it resets.
+            # An upstream quota response is a useful terminal outcome, not
+            # an Actor failure. It is never a chargeable report result.
             if resp.status_code == 429:
-                Actor.log.warning("Fair-use cap reached: %s", detail)
+                Actor.log.warning("Upstream quota reached: %s", detail)
                 await Actor.push_data(quota_record(body))
                 return
 
@@ -246,7 +253,13 @@ async def main() -> None:
             )
             record["markdownKeyValueStoreKey"] = "REPORT.md"
 
-        await Actor.push_data(record)
+        # Store and charge atomically: a user pays only when the ready report
+        # is present in their dataset. The Apify Console defines the price.
+        charge_result = await Actor.push_data(record, "report-generated")
+        if charge_result.event_charge_limit_reached:
+            Actor.log.warning(
+                "The report was delivered, but the run charge limit was reached."
+            )
         Actor.log.info(
             "Report delivered (%s chapters, verdict '%s', cache %s).",
             record.get("chapterCount"),
