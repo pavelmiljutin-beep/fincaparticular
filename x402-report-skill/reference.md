@@ -42,6 +42,18 @@ Response `200`:
   "chapters": [
     { "slug": "flood-risk-snczi", "title": "Flood Risk", "category": "hazards",
       "coverage": "computed at report time (national / modelled data)" }
+  ],
+  "chapters_unavailable": [
+    { "slug": "land-registry-nota-simple", "title": "Land Registry — Nota Simple",
+      "reason": "not_available" }
+  ],
+  "size_estimates": [
+    { "format": "json", "detail": "brief", "estimated_bytes": 4840,
+      "estimated_tokens": 1613, "estimated_bytes_with_images": 544840 },
+    { "format": "json", "detail": "full", "estimated_bytes": 19800,
+      "estimated_tokens": 6600, "estimated_bytes_with_images": 559800 },
+    { "format": "markdown", "detail": "full", "estimated_bytes": 83600,
+      "estimated_tokens": 20900, "estimated_bytes_with_images": 623600 }
   ]
 }
 ```
@@ -53,6 +65,11 @@ Interpretation:
 - `chapters` — report chapters that would be generated. Hazard/climate chapters
   are `computed at report time` (national/modelled), so they appear regardless
   of local POI density.
+- `chapters_unavailable` — chapters we do **not** offer here, so "absent" is
+  never mistaken for "checked and clean".
+- `size_estimates` — forecast payload size per `(format, detail)` pair. Use it
+  to pick a format that fits your context budget; note how much
+  `estimated_bytes_with_images` adds, which is why images are opt-in.
 - `coverage_level` — `none | sparse | moderate | rich`. Use it to decide whether
   ordering a paid report is worthwhile. **`none`/`sparse` means thin data.**
 
@@ -67,12 +84,24 @@ signed `PAYMENT-SIGNATURE` header (x402 client SDKs do this automatically).
 Request body (JSON):
 
 ```json
-{ "lat": 40.4168, "lng": -3.7038, "language": "en" }
+{ "lat": 40.4168, "lng": -3.7038, "language": "en", "format": "json" }
 ```
 
 or `{ "location": "40.4168,-3.7038", "language": "en" }`. Supported
 `language` values: `en, es, ru, fr, uk, de, ar` (default `en`). Only coordinates
 are accepted (most reliable for agents).
+
+Optional output controls:
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `format` | `json` | `json` — structured per-chapter facts; `markdown` — prose; `both`. |
+| `detail` | `full` | `brief` drops `metrics` and `source`, keeping the verdict and headline. Applies to JSON only. |
+| `chapters` | all | Array (or comma-separated string) of slugs. Dependencies are resolved automatically — asking for `mold-risk` also schedules `climate-normals-aemet` and `wind-rose`, reported back in `metadata.chapters_auto_added`. |
+| `excludeChapters` | — | Slugs to drop. |
+| `includeImages` | `false` | Include base64 map PNGs. One can outweigh the whole text report. |
+
+An unknown slug or format returns `400 bad_request`.
 
 On success `202 Accepted`:
 
@@ -114,16 +143,56 @@ When ready:
   "job_id": "3f9a...",
   "status": "ready",
   "source": "parcelabot",
-  "markdown": "# Cadastral Identity\n...full report...",
+  "summary": {
+    "overall_verdict": "mixed",
+    "red_flags": [],
+    "green_flags": [
+      { "slug": "wildfire-risk-effis", "title": "Wildfire risk", "band": "none",
+        "headline": "Favorable" }
+    ],
+    "chapters_ok": 22,
+    "chapters_failed": [],
+    "chapters_skipped": ["old-maps-overlay"]
+  },
+  "chapters": [
+    {
+      "slug": "flood-risk-snczi",
+      "title": "Flood risk",
+      "category": "hazards",
+      "verdict": "favorable",
+      "band": "low",
+      "headline": "Favorable",
+      "metrics": [{ "key": "in_zfp", "value": false }],
+      "source": { "name": "SNCZI / MITECO", "as_of": "2026-08-20T10:00:00+00:00" },
+      "status": "ok"
+    }
+  ],
   "metadata": {
     "language": "en",
+    "format": "json",
+    "detail": "full",
     "generated_at": "2026-08-20T10:00:00+00:00",
     "chapters": ["cadastral-identity", "flood-risk-snczi", "..."],
     "chapter_count": 22,
+    "chapters_failed": [],
+    "chapters_skipped": ["old-maps-overlay"],
+    "images_included": false,
     "location": { "lat": 40.41, "lng": -3.70, "ref": "...", "province": "Madrid", "country": "ES" }
   }
 }
 ```
+
+`markdown` is present only when you asked for `format: "markdown"` or `"both"`;
+`images` only with `includeImages: true`.
+
+Reading the envelope:
+
+- `summary` first — it is designed to settle a go/no-go in a few hundred tokens.
+- `verdict` is one of `favorable | mixed | unfavorable | unknown`; `band` is the
+  raw source classification behind it.
+- `chapters_failed[]` carries `{slug, reason, retryable}`. A chapter listed here
+  is **unknown**, not clean — retry rather than concluding from its absence.
+- `status: "prose_only"` on a chapter means we do not model its numbers yet.
 
 On failure: `{ "status": "failed", "error": "..." }`.
 

@@ -1,6 +1,6 @@
 {
     "title": "Parcelabot Property Report input",
-    "description": "Provide a location to build a full property due-diligence report for. Use lat + lng, or a single 'lat,lng' location string.",
+    "description": "Provide a location to build a full property due-diligence report for. Use lat + lng, or a single 'lat,lng' location string. Set 'dryRun' first for a free preview of what the report would contain and how large it would be.",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
@@ -11,6 +11,13 @@
             "editor": "textfield",
             "prefill": "41.4036,2.1744",
             "nullable": true
+        },
+        "dryRun": {
+            "title": "Free preview only (no report)",
+            "type": "boolean",
+            "description": "Free. Returns what a report for this location would contain — the chapter list, how dense the local data is, and the estimated bytes/tokens for each output format — without generating or charging for a report. Needs coordinates; a cadastral reference alone cannot be previewed.",
+            "editor": "checkbox",
+            "default": false
         },
         "ref": {
             "title": "Cadastral reference",
@@ -39,6 +46,52 @@
             "title": "Longitude",
             "type": "string",
             "description": "Decimal longitude (WGS-84), e.g. '-3.7038'. Use together with 'lat'.",
+            "editor": "textfield",
+            "nullable": true
+        },
+        "format": {
+            "title": "Output format",
+            "type": "string",
+            "description": "'json' (default) returns structured per-chapter facts — verdicts, numbers and sources — with no prose. 'markdown' returns the human-readable report. 'both' returns each.",
+            "editor": "select",
+            "default": "json",
+            "enum": ["json", "markdown", "both"],
+            "enumTitles": ["JSON facts (best for agents)", "Markdown prose", "Both"]
+        },
+        "detail": {
+            "title": "Detail level",
+            "type": "string",
+            "description": "Applies to the JSON facts. 'full' includes every metric and source per chapter. 'brief' keeps only the verdict and headline per chapter — a fraction of the size when you just need a go/no-go read. Markdown output is unaffected.",
+            "editor": "select",
+            "default": "full",
+            "enum": ["full", "brief"],
+            "enumTitles": ["Full", "Brief (verdicts only)"]
+        },
+        "chapters": {
+            "title": "Only these chapters",
+            "type": "array",
+            "description": "Optional. Limit the report to specific chapter slugs (e.g. 'flood-risk-snczi', 'seismic-zoning-ign'). Chapters that another chapter depends on are added automatically and reported back in 'chapters_auto_added'. Leave empty for the full report. Run with 'dryRun' to list the available slugs.",
+            "editor": "stringList",
+            "nullable": true
+        },
+        "excludeChapters": {
+            "title": "Exclude these chapters",
+            "type": "array",
+            "description": "Optional. Drop specific chapter slugs from the report.",
+            "editor": "stringList",
+            "nullable": true
+        },
+        "includeImages": {
+            "title": "Include map images",
+            "type": "boolean",
+            "description": "Off by default. Map images are large base64 PNGs — a single one can outweigh the entire text report. When on, they are written to the key-value store and referenced from the dataset record rather than inlined.",
+            "editor": "checkbox",
+            "default": false
+        },
+        "radiusKm": {
+            "title": "Preview search radius (km)",
+            "type": "string",
+            "description": "Optional, dry run only. Radius used when counting nearby points of interest.",
             "editor": "textfield",
             "nullable": true
         },

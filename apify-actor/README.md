@@ -1,49 +1,129 @@
 # Parcelabot Property Report — Apify Actor
 
-A **thin proxy Actor** that orders a full, parcel-level Parcelabot property
-due-diligence report and returns it as **Markdown**. It does no scraping and
-runs no browser — it forwards your input to the Parcelabot host
-(`parcelabot.duckdns.org`) and stores the result in the Actor's dataset.
+Parcel-level property due-diligence for **Spain, France, Andorra and the
+Netherlands**, returned as **structured JSON facts** an agent can act on
+directly. It does no scraping and runs no browser — it forwards your input to
+the Parcelabot host and stores the result in the Actor's dataset.
 
-Coverage: **Spain, France, Andorra, the Netherlands** (Spain has the full
-chapter set; the others a growing subset). A report bundles ~20 chapters —
-cadastral identity, flood/wildfire/seismic/radon hazards, climate, wind,
-solar, air quality, noise, transport access, demographics and more.
+**Look before you buy:** run once with `dryRun: true` for a **free** preview of
+which chapters exist at that location, how dense the local data is, and how
+many bytes/tokens each output format would cost you. Then order the report.
+
+## What you get
+
+A report bundles ~20 chapters — cadastral identity, flood / wildfire / seismic
+/ radon hazards, climate, wind, solar, air quality, noise, transport access,
+demographics and more. Each chapter comes back as:
+
+```json
+{
+  "slug": "flood-risk-snczi",
+  "title": "Flood risk",
+  "category": "hazards",
+  "verdict": "unfavorable",
+  "band": "high",
+  "headline": "Unfavorable",
+  "metrics": [
+    { "key": "in_zfp", "value": true },
+    { "key": "in_dph", "value": false }
+  ],
+  "source": { "name": "SNCZI / MITECO", "as_of": "2026-08-20T10:00:00+00:00" }
+}
+```
+
+plus a top-level `summary` you can decide on in a few hundred tokens:
+
+```json
+{
+  "overall_verdict": "unfavorable",
+  "red_flags": [{ "slug": "flood-risk-snczi", "band": "high" }],
+  "green_flags": [{ "slug": "wildfire-risk-effis", "band": "none" }],
+  "chapters_ok": 21,
+  "chapters_failed": [],
+  "chapters_skipped": ["old-maps-overlay"]
+}
+```
+
+`chapters_failed` matters: it distinguishes *"nothing to flag here"* from
+*"an upstream source was down"*, so you can retry instead of drawing the wrong
+conclusion. Entries carry `retryable`.
+
+## When **not** to use this
+
+* You need a legal document — this is informational screening, not a *nota
+  simple*, PPRi zoning, or an official cadastral extract.
+* Your point is not on a building or plot. A plaza, road, park or stretch of
+  water has no cadastral parcel and returns `status: "no_data"`.
+* You are outside Spain, France, Andorra or the Netherlands.
+* You want a live feed. Chapters are screening snapshots with an `as_of` date.
 
 ## How it works
 
 ```
-Apify run  ──►  POST https://parcelabot.duckdns.org/api/partner/reports
-                  { location | lat,lng, language, persist }
-                  Authorization: Bearer <PARCELABOT_API_KEY>
-           ◄──  { markdown, metadata, price }   (one synchronous response)
-```
+dryRun   ──►  GET  /api/partner/coverage?lat=..&lng=..      (free)
+         ◄──  { chapters, coverage_level, size_estimates }
 
-The Actor pushes one item to the default **dataset** and writes the report
-body to the key-value store record `REPORT.md`. Apify bills the run; the
-Parcelabot server authenticates the Actor with a shared API key.
+report   ──►  POST /api/partner/reports
+                { location | lat,lng | ref, format, detail,
+                  chapters, includeImages, language }
+         ◄──  { summary, chapters, metadata, price }   (one sync response,
+                                                        typically 20–30 s)
+```
 
 ## Input
 
 | Field | Type | Notes |
 | --- | --- | --- |
+| `dryRun` | boolean | **Free** coverage preview instead of a report. Needs coordinates. |
 | `location` | string | `"lat,lng"`, e.g. `40.4168,-3.7038`. Simplest option. |
 | `lat`, `lng` | string | Decimal degrees, as an alternative to `location`. |
 | `ref` | string | Exact cadastral reference — Spain (20-char RC), France (14-char IDU) or Netherlands (kadastrale aanduiding). Takes priority over coordinates. |
 | `country` | enum | Optional `ES` / `FR` / `NL` to disambiguate an ambiguous `ref`. |
+| `format` | enum | `json` (default), `markdown`, `both`. |
+| `detail` | enum | `full` (default) or `brief` — verdicts and headlines only, no metrics. Applies to the JSON facts. |
+| `chapters` | array | Only these chapter slugs. Prerequisites are added automatically and listed in `metadata.chapters_auto_added`. |
+| `excludeChapters` | array | Drop specific chapter slugs. |
+| `includeImages` | boolean | Default `false`. See *Images* below. |
 | `language` | enum | `en` (default), `es`, `fr`, `de`, `uk`, `ru`, `ar`. |
+| `radiusKm` | string | Dry run only: POI search radius. |
 | `persist` | boolean | Ask the server to also store the report (default `false`). |
 | `baseUrl` | string | Override the Parcelabot host (default is the public one). |
 | `apiKey` | string (secret) | Partner API key. Prefer the env var below. |
 
-### Example
+### Examples
+
+Free preview:
+
+```json
+{ "location": "40.4168,-3.7038", "dryRun": true }
+```
+
+Full report:
+
+```json
+{ "location": "40.4168,-3.7038", "format": "json" }
+```
+
+Just the two hazards you care about, minimal payload:
 
 ```json
 {
     "location": "40.4168,-3.7038",
-    "language": "en"
+    "chapters": ["flood-risk-snczi", "seismic-zoning-ign"],
+    "detail": "brief"
 }
 ```
+
+## Images
+
+Map images are large base64 PNGs — a single one can outweigh the entire text
+report — so they are **off by default**. With `includeImages: true` they are
+written to the key-value store and referenced from the dataset record
+(`images[].keyValueStoreKey`) rather than inlined, keeping the record readable
+by a language model.
+
+Markdown output is likewise stored as `REPORT.md` and referenced by
+`markdownKeyValueStoreKey`.
 
 ## Authentication
 
@@ -61,26 +141,74 @@ The matching server key is configured on Parcelabot via `PARTNER_API_KEYS`
 
 ## Output
 
-One dataset item per run:
+One dataset item per run.
+
+**Report run** (`status: "ready"`):
 
 | Field | Description |
 | --- | --- |
-| `markdown` | The full report as Markdown (also saved as `REPORT.md`). |
-| `metadata` | `language`, `chapters`, `chapter_count`, `location`. |
+| `summary` | Overall verdict, red/green flags, chapter counts. Read this first. |
+| `chapters` | Per-chapter facts: verdict, band, metrics, source. |
+| `metadata` | `language`, `format`, `detail`, `chapters`, `chapters_failed`, `chapters_skipped`, `chapters_auto_added`, `location`. |
 | `ref`, `country`, `province`, `municipality`, `lat`, `lng` | Parcel identity. |
-| `chapterCount`, `chapters` | Chapter summary. |
-| `priceAmount`, `priceCurrency`, `pricePlan` | Informational price (Apify does the billing). |
+| `chapterCount`, `chapterSlugs` | Chapter summary. |
+| `chaptersFailed`, `chaptersSkipped` | Completeness. `retryable` marks transient failures. |
+| `cache` | `"miss"` (freshly generated) or `"hit"` (replayed); `cachedAt` gives the original timestamp. |
+| `markdownKeyValueStoreKey` | Present when Markdown was requested (`REPORT.md`). |
+| `images` | Present when `includeImages` — descriptors with `keyValueStoreKey`. |
+| `priceAmount`, `priceCurrency`, `pricePlan` | Informational unit price. |
 
-If the coordinate is **not on a parcel** or **outside coverage**, the run
-finishes successfully with a single `{ "status": "no_data", "error", "message",
-"requested" }` item instead of failing — aim at a building rooftop and retry.
+**Dry run** (`status: "preview"`): `coverageLevel`, `poiTotal`, `chapterCount`,
+`chapters`, `chaptersUnavailable`, `sizeEstimates`, `datasets`, `categories`.
 
+`sizeEstimates` gives `estimated_bytes` / `estimated_tokens` for each
+`(format, detail)` pair, plus `estimated_bytes_with_images`, so you can pick a
+format that fits your context budget before ordering.
 
-## Monetization
+### Error taxonomy
 
-The Actor is billing-agnostic. To enable Apify **pay-per-event**, define the
-event in the Actor's monetization settings and enable the charge hook in
-[`src/main.py`](src/main.py) (`_maybe_charge` → `await Actor.charge(...)`).
+| Outcome | Meaning | What to do |
+| --- | --- | --- |
+| `status: "no_data"` (run succeeds) | Not on a parcel, or outside coverage. `error` is `no_parcel`, `out_of_coverage` or `bad_location`. | Aim at a building rooftop and retry. Not retryable as-is. |
+| `status: "quota_exceeded"` (run succeeds) | Fair-use cap reached. `quotaWindow`, `quotaUsed`, `quotaLimit`, `quotaResetsAt`. | Wait until `quotaResetsAt`. Cache hits and dry runs still work. |
+| HTTP 400 `bad_request` | Unknown chapter slug or format. | Fix the input. |
+| HTTP 503 `upstream_unavailable` | A source (e.g. the cadastre) timed out. | Transient — the Actor already retries 3×; retry the run later. |
+| `chapters_failed[]` non-empty | The report built, but some chapters did not. | Treat those chapters as unknown, not as clean. |
+
+## Caching
+
+An identical request — same location, language, format, detail, chapter set
+and image setting — replays the stored report instead of re-querying every
+upstream source. Hits are near-instant, and they do **not** count against the
+fair-use cap, so re-reading a report you already ordered is free.
+
+Coordinates are rounded to about 11 m before matching, so two agents aiming at
+the same rooftop share a result while neighbouring parcels stay distinct.
+Changing any option that changes the output produces a fresh report.
+
+## Pricing
+
+**$10/month**, rented through Apify — not a per-run charge. Fair use is **100
+reports/month** and **20/day**.
+
+- Both windows are **rolling**, not calendar: the monthly allowance is the last
+  30 days, so there is no month-end reset to wait for.
+- **Dry runs are free** and never count against the cap.
+- **Cache hits are free** — re-reading a report you already ordered costs you
+  nothing and consumes no allowance.
+- The daily figure is a burst limiter, not a second budget; the monthly cap is
+  what actually binds.
+
+When the cap is reached the run still **succeeds**, pushing a
+`status: "quota_exceeded"` record with `quotaResetsAt` — so a scheduled agent
+can back off cleanly rather than fail.
+
+`priceAmount` in the output is the informational unit price of the underlying
+report, not what you are charged.
+
+If you would rather pay per report in USDC, Parcelabot also exposes an
+[x402 rail](../x402-report-skill/) that takes crypto payment directly, with the
+same free coverage preview.
 
 ## Build from GitHub
 

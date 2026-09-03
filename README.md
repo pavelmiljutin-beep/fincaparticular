@@ -24,6 +24,8 @@ Parcelabot Telegram bot.
 | [`claude-skill/`](claude-skill/) | Anthropic Claude Agent Skills | `SKILL.md` + a helper script |
 | [`mcp-server/`](mcp-server/) | Any MCP client (Claude Desktop, etc.) | Minimal Python MCP server proxying the API |
 | [`openai/`](openai/) | OpenAI / ChatGPT tools | Function/tool JSON schema + example |
+| [`x402-report-skill/`](x402-report-skill/) | Autonomous agents paying in USDC | Full parcel report over the x402 rail |
+| [`apify-actor/`](apify-actor/) | Agents and scrapers on the Apify platform | Full parcel report as structured JSON; monthly rental |
 
 ## Conventions (all packages)
 
@@ -40,20 +42,30 @@ Parcelabot Telegram bot.
 The API base URL is configurable — change it in each package if Parcelabot moves
 to a custom domain.
 
-## Two rails: free preview vs paid report
+## Three rails: free preview vs paid report
 
 | Rail | Skill | Audience | Payment | Output |
 | --- | --- | --- | --- | --- |
 | Free, area-level | this folder (`city-insight`) | any assistant | none | condensed scored Markdown |
 | Paid, parcel-level | [`x402-report-skill/`](x402-report-skill/) | autonomous agents | **x402 (USDC by default)** | full report as Markdown |
+| Paid, parcel-level | [`apify-actor/`](apify-actor/) | agents on Apify | **$10/month rental** | structured JSON facts (Markdown optional) |
 
 Humans use the Telegram bot. Autonomous **AI agents** that want a full,
-parcel-level report order and pay for it with the
+parcel-level report either order and pay for it with the
 [x402](https://docs.x402.org) protocol via the
-[`x402-report-skill/`](x402-report-skill/) package — which also exposes a
-**free coverage-preview** (`GET /api/agent/coverage`) so an agent can see how
-much real data exists near a coordinate before paying. Use the free
-`city-insight` skill for "which area is better?" questions; use the paid
-`x402-report-skill` only when the user authorises a paid, property-specific
-report.
+[`x402-report-skill/`](x402-report-skill/) package, or rent the
+[`apify-actor/`](apify-actor/) monthly. Both expose a **free coverage preview**
+(`GET /api/agent/coverage` and `GET /api/partner/coverage`) so an agent can see
+which chapters exist near a coordinate — and how many bytes/tokens each output
+format would cost it — before paying. Use the free `city-insight` skill for
+"which area is better?" questions; use a paid rail only when the user
+authorises a paid, property-specific report.
+
+### Choosing an output format
+
+The paid rails default to **`format=json`**: per-chapter `verdict`, `band`,
+`metrics` and `source`, plus a small top-level `summary` you can decide on in a
+few hundred tokens. Prefer it over `markdown` unless a human will read the
+result — the prose carries the same numbers at several times the token cost.
+Base64 map images are **off by default** for the same reason.
 

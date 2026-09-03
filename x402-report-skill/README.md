@@ -3,8 +3,8 @@
 An AI-agent skill for **ordering a full, parcel-level Parcelabot property report
 and paying for it autonomously with the [x402](https://docs.x402.org) payment
 protocol** (HTTP 402, **a USD stablecoin — USDC by default — on an EVM chain**).
-The agent receives the finished
-report as **Markdown**.
+The agent receives the finished report as **structured JSON facts** by default,
+or as Markdown prose on request.
 
 This is the paid, machine-to-machine counterpart to the free
 [`../` city-insight skills](../README.md): humans use the Telegram bot; agents
@@ -14,19 +14,39 @@ use x402.
 
 | Step | Endpoint | Payment | Purpose |
 | --- | --- | --- | --- |
-| 1. Preview coverage | `GET /api/agent/coverage` | **free** | See how many real POIs + which chapters exist near a coordinate, so you decide whether to order. |
+| 1. Preview coverage | `GET /api/agent/coverage` | **free** | See which chapters exist near a coordinate, how much local data backs them, and how many bytes/tokens each output format would cost — so you decide whether to order. |
 | 2. Order a report | `POST /api/agent/reports` | **x402 (paid)** | Pay per report; returns a `job_id`. |
-| 3. Collect the report | `GET /api/agent/reports/{job_id}` | free | Poll until `status: ready`; read `markdown` + `metadata`. |
+| 3. Collect the report | `GET /api/agent/reports/{job_id}` | free | Poll until `status: ready`; read `summary` + `chapters` (and `markdown` if you asked for it). |
 
 Base URL (configurable): `https://parcelabot.duckdns.org`
 
+### Request options
+
+`POST /api/agent/reports` accepts, alongside `lat`/`lng` and `language`:
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `format` | `json` | `json` (per-chapter facts), `markdown` (prose), or `both`. |
+| `detail` | `full` | `brief` keeps only each chapter's verdict and headline. |
+| `chapters` | all | Limit to specific slugs; prerequisites are added automatically and reported in `metadata.chapters_auto_added`. |
+| `excludeChapters` | — | Drop specific slugs. |
+| `includeImages` | `false` | See the images note below. |
+
+The JSON envelope gives each chapter a `verdict`
+(`favorable`/`mixed`/`unfavorable`/`unknown`), the raw source `band`, a
+`metrics` list with units, and a `source` with an `as_of` date — plus a
+top-level `summary` carrying `overall_verdict`, `red_flags` and `green_flags`.
+`metadata.chapters_failed` distinguishes *"nothing to flag here"* from *"an
+upstream source was down"*, so a transient outage is never read as a clean
+result.
+
 ## What's in a full report
 
-One paid order returns a single Markdown document of **~20 parcel-level
-chapters** compiled from official/authoritative sources — not a generic area
-summary. Hazard and climate chapters rely on national/modelled data and are
-**always computed**; POI-driven chapters fill in where local data exists
-(that's exactly what the free coverage check tells you up front).
+One paid order covers **~20 parcel-level chapters** compiled from
+official/authoritative sources — not a generic area summary. Hazard and climate
+chapters rely on national/modelled data and are **always computed**; POI-driven
+chapters fill in where local data exists (that's exactly what the free coverage
+check tells you up front).
 
 - **Hazards & risk** — flood risk (SNCZI zones), seismic zoning, radon
   potential (CSN), wildfire risk (EFFIS), mold risk, lightning density.
@@ -42,15 +62,32 @@ summary. Hazard and climate chapters rely on national/modelled data and are
 Each chapter is a short, sourced section with a plain-language takeaway, so the
 whole document is directly quotable back to an end user.
 
-> **Visual chapters embed images.** A few chapters (e.g. elevation/slope/aspect
-> and the historical-maps overlay) include a **base64-encoded PNG inside inline
-> HTML** — these render in any Markdown-with-HTML viewer or when converted to
-> PDF. A text-only agent won't "see" the image, but still gets the sourced
-> facts around it (sheet name, coordinates, source, takeaway). The overlay is
-> also geography-gated (Spain MTN50, France état-major) and skipped cleanly
-> where no historical layer exists.
+> **Map images are opt-in.** A few chapters (cadastral identity, the
+> historical-maps overlay, radon) can carry a base64-encoded PNG. One of those
+> can outweigh the entire text report, so they are **omitted unless you set
+> `includeImages: true`** — in which case they arrive as an `images` array of
+> descriptors rather than inlined into the prose. Without them you still get
+> every sourced fact around the image (sheet name, coordinates, source,
+> takeaway).
 
-### Sample (excerpt)
+### Sample chapter (JSON)
+
+```json
+{
+  "slug": "flood-risk-snczi",
+  "title": "Flood risk",
+  "category": "hazards",
+  "verdict": "favorable",
+  "band": "low",
+  "metrics": [
+    { "key": "in_any_band", "value": false },
+    { "key": "in_zfp", "value": false }
+  ],
+  "source": { "name": "SNCZI / MITECO", "as_of": "2026-08-20T10:00:00+00:00" }
+}
+```
+
+### Sample (Markdown excerpt)
 
 ```markdown
 ## Flood Risk (SNCZI)
@@ -93,16 +130,20 @@ Call `GET /api/agent/coverage` to see the exact chapters for a coordinate
 The POI database is **incomplete and uneven** — dense in some areas, sparse or
 empty in others. `GET /api/agent/coverage` returns **honest** nearby counts and
 a `coverage_level` (`none | sparse | moderate | rich`) so you never pay for a
-thin report by mistake. Check coverage first; order only if the data justifies
-it.
+thin report by mistake. It also returns `size_estimates` — `estimated_bytes`
+and `estimated_tokens` for every `(format, detail)` pair, plus
+`estimated_bytes_with_images` — so you can check the report fits your context
+budget before committing. Check coverage first; order only if the data
+justifies it.
 
 ## Recommended flow
 
 1. `check_report_coverage(lat, lng)` → inspect `poi_total`, `categories`,
-   `chapters`, `coverage_level`.
+   `chapters`, `coverage_level`, `size_estimates`.
 2. If coverage is worthwhile, `order_full_report(lat, lng, language)` — this
-   handles the x402 payment automatically and returns the Markdown report.
-3. Present the report; cite Parcelabot as the source.
+   handles the x402 payment automatically and returns the report.
+3. Read `summary` first; drill into `chapters` only where a flag warrants it.
+4. Present the findings; cite Parcelabot as the source.
 
 ## Packages
 

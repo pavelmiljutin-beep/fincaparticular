@@ -2,19 +2,54 @@
     "actorSpecification": 1,
     "views": {
         "overview": {
-            "title": "Reports",
+            "title": "At a glance",
             "transformation": {
-                "fields": ["ref", "country", "language", "chapterCount", "priceAmount", "priceCurrency"]
+                "fields": ["status", "ref", "country", "municipality", "summary", "chapterCount"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "status": { "label": "Status" },
+                    "ref": { "label": "Cadastral ref" },
+                    "country": { "label": "Country" },
+                    "municipality": { "label": "Municipality" },
+                    "summary": { "label": "Verdict & flags" },
+                    "chapterCount": { "label": "Chapters" }
+                }
+            }
+        },
+        "facts": {
+            "title": "Full facts",
+            "transformation": {
+                "fields": ["ref", "summary", "chapters", "chaptersFailed", "chaptersSkipped", "metadata"]
             },
             "display": {
                 "component": "table",
                 "properties": {
                     "ref": { "label": "Cadastral ref" },
-                    "country": { "label": "Country" },
-                    "language": { "label": "Language" },
-                    "chapterCount": { "label": "Chapters" },
-                    "priceAmount": { "label": "Price" },
-                    "priceCurrency": { "label": "Currency" }
+                    "summary": { "label": "Summary" },
+                    "chapters": { "label": "Chapters" },
+                    "chaptersFailed": { "label": "Failed" },
+                    "chaptersSkipped": { "label": "Skipped" },
+                    "metadata": { "label": "Metadata" }
+                }
+            }
+        },
+        "preview": {
+            "title": "Coverage preview (dry run)",
+            "transformation": {
+                "fields": ["status", "lat", "lng", "coverageLevel", "poiTotal", "chapterCount", "sizeEstimates"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "status": { "label": "Status" },
+                    "lat": { "label": "Latitude" },
+                    "lng": { "label": "Longitude" },
+                    "coverageLevel": { "label": "Local data density" },
+                    "poiTotal": { "label": "Nearby POIs" },
+                    "chapterCount": { "label": "Chapters expected" },
+                    "sizeEstimates": { "label": "Size / token estimate" }
                 }
             }
         }
