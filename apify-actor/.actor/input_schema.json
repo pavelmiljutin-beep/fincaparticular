@@ -38,14 +38,14 @@
         "lat": {
             "title": "Latitude",
             "type": "string",
-            "description": "Decimal latitude (WGS-84), e.g. '40.4168'. Use together with 'lng' as an alternative to 'location'.",
+            "description": "Decimal latitude (WGS-84), e.g. '41.4036'. Aim at a building rooftop — a plaza, road, park or water has no cadastral parcel and returns no report. Use together with 'lng' as an alternative to 'location'.",
             "editor": "textfield",
             "nullable": true
         },
         "lng": {
             "title": "Longitude",
             "type": "string",
-            "description": "Decimal longitude (WGS-84), e.g. '-3.7038'. Use together with 'lat'.",
+            "description": "Decimal longitude (WGS-84), e.g. '2.1744'. Use together with 'lat'.",
             "editor": "textfield",
             "nullable": true
         },
