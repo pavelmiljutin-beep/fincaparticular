@@ -255,7 +255,10 @@ async def main() -> None:
 
         # Store and charge atomically: a user pays only when the ready report
         # is present in their dataset. The Apify Console defines the price.
-        charge_result = await Actor.push_data(record, "report-generated")
+        # ``charged_event_name`` is keyword-only in the Actor SDK.
+        charge_result = await Actor.push_data(
+            record, charged_event_name="report-generated"
+        )
         if charge_result.event_charge_limit_reached:
             Actor.log.warning(
                 "The report was delivered, but the run charge limit was reached."
